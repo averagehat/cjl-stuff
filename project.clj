@@ -14,6 +14,7 @@
 
 [org.clojure/data.xml "0.0.8"]
 
+ [org.clojure/core.async "0.1.346.0-17112a-alpha"]
 
 [clj-http "2.0.0"]
                  [defun "0.2.0"] ]

@@ -12,7 +12,7 @@
             [clojure.test :refer :all]
             [clojure.core.typed :as t]
             [clojurewerkz.elastisch.rest.response :as esrsp] ) 
-            ;[clojure.core.match :refer [match]]
+            [clojure.core.match :refer [match]]
   (:gen-class))
 
 ;
@@ -135,33 +135,21 @@
 ;
 ;(-> (bio/init-fasta-sequence 1 ""   :iupacNucleicAcids "TTTTTTTTT")
 ;     (bio/translate 1))
-;
-;
-;
 
 
 (require '[clj-http.client :as client]) 
-(use 'clojure.data.xml)
-
 
 ; (with-open [out-file (java.io.FileWriter. "results.xml")]
 ;    (emit res out-file))
 
-
-(require ['clojure.zip :as 'z])
 ;(zf/xml1-> x (zf/text #(-> % true ))))
-
- (require '[clojure.data.zip.xml :as zf])
-
-
-
 
 (defn acc->xml [acc]
   (let [url (format "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id=%s&rettype=xml" acc)
       s (slurp url) 
       parsed (parse-str s)] parsed))
-(defn xml->loc [res]
-  (->> (tree-seq map? :content  res) 
+(defn xml->loc [x]
+  (->> (tree-seq map? :content  x) 
        (filter #(-> % :tag (= :SubSource)))
        (map :content)
         (filter 
@@ -175,7 +163,7 @@
 
 ;(xml->loc (acc->xml "EU569704" )) 
 
-
+(emit-str res)
 (comment 
 (let [ids (line-seq (clojure.java.io/reader "ids.txt"))
       xmls (map acc->xml ids)
@@ -185,11 +173,246 @@
       xmls (map acc->xml ids)]
 (doall xmls))
 
-
+(def res (acc->xml "EU569704"))
 (def x (z/xml-zip res))  
-(->> 
-  (tree-seq (some-fn map? vector?) :content res)
-    (filter (fn [e] 
-      (let [con (first (:content e))] 
-        (when (string? con)  (re-find #"USA" con)) ))))
+
+(->> (dz/descendants x)
+    (map #( zf/xml-> % "11060")))
+(->> (tree-seq (some-fn map? vector?) :content res)
+     (filter (fn [e] 
+       (let [con (first (:content e))] 
+         (when (string? con)  (re-find #"USA" con)) )))))
+ 
+
+(zf/xml-> x :Seq-entry zf/text)
+zf/xml->
+(z/node x)
+
+((xml-seq x)
+(->> (dz/children x)
+     print)
+
+(with-open [out-file (java.io.FileWriter. "foo.xml")]
+    (indent res out-file))
+
+(z/node (drop-while #(not (zf/xml1-> % :Seq-entry_set)) (iterate z/next x)))
+
+
+(z/node (drop-while #(not (zf/xml1-> % :Seq-entry_set)) (iterate z/next x)))
+;() is truthy!
+(->> (tree-seq map? :content  res) 
+     (filter #(-> % :tag (= :SubSource)))
+(map
+(fn [x]
+  (-> (z/xml-zip x)
+      z/down
+      (zf/xml-> (zf/attr= :value "country")))))
+  (remove empty?))
+(count  (dz/descendants x)))
+(count (filter #(some :SubSource %) (dz/descendants x)))
+(count 
+  (filter #(not-empty (zf/xml-> %  :SubSource))
+          (dz/descendants x)))
+
+
+(count (filter-xml x :SubSource :SubSource_subtype (zf/attr= :value "country")))
+ 
+
+
+(require ['clojure.data.zip :as 'dz])
+
+
+[org.clojure/data.xml "0.0.8"]
+
+(use 'clojure.data.xml)
+
+(require '[clojure.data.zip.xml :as zf])
+(require ['clojure.zip :as 'z])
+
+(def ex
+"<table>
+  <column name=\"col1\" type=\"varchar\"  length=\"8\"/>
+  <column name=\"col2\" type=\"varchar\"  length=\"16\"/>
+  <column name=\"col3\" type=\"int\"  length=\"16\"/>
+</table>")
+
+(let [x (z/xml-zip (clojure.data.xml/parse-str ex))]
+  (->> (zf/xml-> x :column)
+         flatten
+        (keep :attrs)
+        (map vals)))
+
+(let [x  (clojure.data.xml/parse-str ex)]
+  (->> (zf/xml-> x :column #(keep :attrs %))
+  (map vals)))
+
+(count ) (dz/descendants x)
+
+(defn filter-xml [x & preds]
+  (filter (comp not-empty #(apply zf/xml-> % preds))  (dz/descendants x)))
+
+
+(let [ sources (->> (tree-seq map? :content  res) 
+     (filter #(-> % :tag (= :SubSource))))]
+(for [s sources :let [x (z/xml-zip s)
+                       kids (dz/children x)]
+                 :when (some (zf/attr= :value "country") kids)]
+  (indent-str x)))
+
+(fn [x]
+  (-> (z/xml-zip x)
+      z/down
+      (zf/xml-> (zf/attr= :value "country")))))
+  (remove empty?))
+
+
+       (map :content)
+        (filter 
+          (fn [e] 
+             (some #(-> % :attrs :value (= "country")) e)))
+       flatten
+       (filter  #(-> % :tag (= :SubSource_name)))
+       (map :content)
+       flatten
+       first))
+
+
+(def ex " <data> <products> <product> <section>Red Section</section> <images> <image>img.jpg</image> <image>img2.jpg</image> </images> </product> <product> <section>Blue Section</section> <images> <image>img.jpg</image> <image>img3.jpg</image> </images> </product> <product> <section>Green Section</section> <images> <image>img.jpg</image> <image>img2.jpg</image> </images> </product> </products> </data>")
+
+
+(def x (z/xml-zip (clojure.data.xml/parse-str ex)))
+  (zf/xml-> x :products :product))
+
+(let [products  (zf/xml-> x :products :product)]
+    (map #(filter-xml % (zf/text= "img2.jpg")) x)))
+
+
+
+;
+;
+;
+
+
+(use '[defun :only [defun]])
+
+(require '[clojure.core.match :refer [match]])
+
+(let [a true 
+      b true
+      ]
+(match [ a b]
+
+       [true false] "tf"
+       [false false] "ff"
+       [_ _] "other")
 )
+
+;; works with vectors
+;; doesn't work with anything else
+(let [a ["foo"]]
+(match [ a ]
+
+       [[]] "empty"
+       [_] "other"
+))
+;; doesn't work with anything else
+(let [a '()]
+(match [ a ]
+
+       [([] :seq)] "empty"
+       [(_ :seq)] "other"
+))
+
+(let [a [1 2]]
+(match [ a ] 
+       [[]] "empty"
+       [[1 _]] "one_"
+       [_] "other"
+))
+
+
+(let [a [ 2]]
+(match [ a ] 
+       [[]] "empty"
+       [[_ _]] "two elems"
+       [_] "other"
+))
+
+(let [x [1 2 nil nil nil]]
+  (match [x]
+    [([1] :seq)] :a0
+    [([1 2] :seq)] :a1
+    [([1 2 nil nil nil] :seq)] :a2
+    :else nil))
+
+
+(let [a '()]
+(match [ a ] 
+       [([] :seq)] "empty"
+       [([_] :seq)] "other"
+))
+
+
+(let [a {:hat "blue"}]
+(match [ a ] 
+       [([] :seq)] "empty"
+       [([_] :seq)] "list"
+       [_] "other"))
+
+(let [a {:hat "blue"}]
+  (match [ a ] 
+    [{:hat _}] "has it"))
+
+( (fun 
+    ([{:hat x}] (str "hat colored " x))
+    ({} "no hat...")
+    ) {:hat "red"})
+
+;; usefuls for schema validation 
+( (fun 
+    ([{:hat x}] (str "hat colored " x))
+    ({} "no hat...")
+    ) {:hat "red"})
+;; could implement pattern caclulus in clojure?
+            (require '[clojure.core.match :refer [match]])
+;; the sleeping barber problem 
+(def waiting (atom 0))
+(def busy (atom false))
+(def serviced (atom 0))
+
+(defn barber-done [] 
+  (do (swap! serviced inc)
+    (if (pos? waiting)
+      (do
+      (swap! waiting dec)
+      (Thread/sleep 20)
+        (recur))
+    (reset! busy false)))
+
+
+(def new-cust
+  #(swap! waiting
+         (fun 
+           ([3] 3)
+           ([x] (inc x)))))
+
+(new-cust)
+(print waiting)
+            (require '[defun :refer [fun]])
+
+(require '[clojure.core.async :as async :refer [<! >! <!! timeout chan alt! go]])
+
+(do (go (<! ( doseq [i (range 10)] 
+             (do 
+               Thread/sleep 1000)
+             print i)))))
+
+(do
+(go (<!
+  (let [sleep (+ 100 (rand-int 20))]
+        (do (new-cust)
+            (Thread/sleep sleep))
+  (println (System/currentTimeMillis)))))
+)))
+
+
