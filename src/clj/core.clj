@@ -503,4 +503,150 @@
 ;;  (println (System/currentTimeMillis)))))
 ;;)))
 ;;
-;;
+(require '[instaparse.core :as insta])
+
+
+(require ['clojure.zip :as 'z])
+(require '[clojure.test :refer :all])
+
+(def fq-parse (insta/parser (clojure.java.io/file "fastq.grammar")))
+ 
+(def raw-parse (insta/parser 
+  "file : (record <'\n'>)* record <'\n'?>
+  record : id <'\n'> sequence
+  id : <'>'>  #'[^\n]+'
+  sequence : ('A' | 'G' | 'C' | 'T' | <'\n'>)+")) 
+(s 0)
+(def s (vec "GGg+2acGGGGG+1AGGG+3CCCgg"))
+(def num? (into #{} (map str #{0 1 2 3 4 5 6 7 8 9})))
+(num? "a")
+(num "0")
+(def sub (partial subvec s)
+(let [pluses (keep-indexed #(when (#{\+ \-} %2) %1) s)
+      nums (map (comp #(Integer. %) str/join (fn [i] take-while num? (subvec s i))) pluses)
+      ends (map #(+ %1 %2) nums pluses)
+      starts (map #(+ 1 (count (str %1)) %2) pluses nums)
+      to-fix (map sub pluses ends)
+      ;; will below fail if index 0 is an insert?
+      goods  (concat (sub 0 (first pluses)) (map sub ends pluses))
+      fixed  (map #(str \i % \i) to-fix)]
+ (interleave goods fixed))
+look
+
+
+
+      ;nums (map (comp #(Integer/parseInt %) s #(+ 1 %) ) pluses)
+      ;starts (map #(+ 2 %) pluses)
+      ])
+
+
+
+(seq s)
+
+"
+ref : <'.'> | <','> 
+nil : <'%'> 
+indel : number = ('+'|'-') <#'[0-9]+'> 
+
+(fq-parse
+"@M02261:12:000000000-A6FJ2:1:1101:15914:1452 1:N:0:12
+CTTATCTCCTGTTCCACTTCAAACAGCAGTTGTAATGCTTGCATGAATGTTATTTGTTCAAAGCTATTTTCAGTTGTTCTTAATCTGTGTCTCACTTCTTCAATTAGCCATCTTATCTCTTCAAACTTCTGACCTAGCTGTTCTCGCCATTTCCCGTTTCTGTTTTGGAGTAAGTGGAGGTCCCCCATTTTCATTACTGCTTCTCCTAGCGAATCTCTGTAGATTTTTAGAGACTCGAACTGTGTT
++
+1>AA1FD3DFFFG3BBF11FGGGGHHGFHGFGGHHFGBHHFHHHFFFFF1DFGHHHGF1FFH10G1HHBHFHEHHGGHHHHH2FFGHABGAGHFHHHFHHBGFHF1GBFFHHHFEGGHBGB1B@EGGHFHFEHGGFFHFFGH2EGGGCFGFHHFBE/FBGEDEBFCB?10FFHDDDHDC//@@FGE?CG2<FGGGHEHBGFHHHHH1<>C--@>CHFHDDDBD000DG./<DDGGB..:.GFHHHH
+"))
+
+(def tr2
+(fq-parse
+"@EAS54_6_R1_2_1_443_348
+GTTGCTTCTGGCGTGGGTGGGGGGG
++
+ZZZZZZZZZZZXZVZZMVZRXRRRR
+"))
+
+(defn get-encoding [t] (-> (z/vector-zip t) z/down z/right z/right z/right z/right z/node first)) 
+
+(is
+  (= :sanger (get-encoding tr1)))
+
+(is
+  (= :illumina-1-3 (get-encoding tr2)))
+j
+
+reduce
+(reduce 
+
+
+try chunked parsing--probably it doesn't work properly. Look at another library?
+cfg1->processing->cfg2
+cfg1->processing->cfg1
+cfg1->json
+instaparse discussion of optimizing memory
+LL/LALR1 grammar 
+VCF parser header + line-by-line
+pileup parser
+SAM-view parser
+
+"
+; laziness in instaparse
+; attempt cfg1->json
+; attempt cfg1->change->cfg1, using instagenerate or instaparse
+; could replace +3AAA -> +IIIAAA
+; could use lookahead to ensure length of quality/match it up 
+
+(require '[instaparse.core :as insta])
+(use 'instaparse)
+
+(def parse (insta/parser abc-grammar-map :start :S))
+
+(use 'instaparse.combinators)
+(Integer/parseInt "12")
+(repeat  10 \a )
+(def abc-grammar-map
+  {:S (cat (look (cat (nt :A) (string "c")))
+           (plus (string "a"))
+           (nt :B))
+   :A (cat (string "a") (opt (nt :A)) (string "b"))
+   :B (hide-tag (cat (string "b") (opt (nt :B)) (string "c")))})
+
+(parse "aabbcc" )
+(parse "aabbcc" )
+
+:S
+
+2aa
+"S = int "
+((insta/parser "A = 'a' '!' 'b' | 'a' A 'b'")  "aa!bb")
+
+
+
+(def parse' (insta/parser simple :start :S))
+(def simple
+  {:S #(cat % (rep (Integer/parseInt %) (Integer/parseInt %) (string "a") ))})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
